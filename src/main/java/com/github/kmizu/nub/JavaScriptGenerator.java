@@ -212,11 +212,12 @@ public class JavaScriptGenerator implements AstNode.ExpressionVisitor<Object> {
         stringBuilder.append(" = function(");
         boolean isFirst = true;
         for(String e:node.args()) {
-            stringBuilder.append(e);
             if(isFirst){
                 isFirst = false;
+            }else{
                 stringBuilder.append(",");
             }
+            stringBuilder.append(e);
         }
         stringBuilder.append("){"); {
             visitExpressionsDirectReturn(node.body());
@@ -244,11 +245,12 @@ public class JavaScriptGenerator implements AstNode.ExpressionVisitor<Object> {
         stringBuilder.append(")(");
         boolean isFirst = true;
         for(AstNode.Expression e:node.params()) {
-            e.accept(this);
             if(isFirst){
                 isFirst = false;
+            }else{
                 stringBuilder.append(",");
             }
+            e.accept(this);
         }
         stringBuilder.append(")");
         return null;
