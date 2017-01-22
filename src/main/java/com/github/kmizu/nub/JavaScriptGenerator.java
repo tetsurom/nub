@@ -89,26 +89,34 @@ public class JavaScriptGenerator implements AstNode.ExpressionVisitor<Object> {
     public Object visitPrintlnExpression(AstNode.PrintlnExpression node) {
         stringBuilder.append("console.log(");
         node.target().accept(this);
-        stringBuilder.append(");");
+        stringBuilder.append(")");
         return null;
     }
 
     private void visitExpressions(List<AstNode.Expression> nodes)
     {
-        for (AstNode.Expression e : nodes) {
-            if(e instanceof AstNode.DefFunction) {
+
+        for (int i = 0, n = nodes.size(); i < n; ++i) {
+            AstNode.Expression e = nodes.get(i);
+            if(i < n - 1)
+            {
                 e.accept(this);
-                stringBuilder.append(";");
-                stringBuilder.append("__last__ = ");
-                stringBuilder.append(((AstNode.DefFunction)e).name());
-            } else if(e instanceof AstNode.LetExpression) {
-                e.accept(this);
-                stringBuilder.append(";");
-                stringBuilder.append("__last__ = ");
-                stringBuilder.append(((AstNode.LetExpression)e).variableName());
-            } else {
-                stringBuilder.append("__last__ = ");
-                e.accept(this);
+            }
+            else {
+                if (e instanceof AstNode.DefFunction) {
+                    e.accept(this);
+                    stringBuilder.append(";");
+                    stringBuilder.append("__last__ = ");
+                    stringBuilder.append(((AstNode.DefFunction) e).name());
+                } else if (e instanceof AstNode.LetExpression) {
+                    e.accept(this);
+                    stringBuilder.append(";");
+                    stringBuilder.append("__last__ = ");
+                    stringBuilder.append(((AstNode.LetExpression) e).variableName());
+                } else {
+                    stringBuilder.append("__last__ = ");
+                    e.accept(this);
+                }
             }
             stringBuilder.append(";");
         }
@@ -134,7 +142,7 @@ public class JavaScriptGenerator implements AstNode.ExpressionVisitor<Object> {
                 visitExpressions(node.body());
                 stringBuilder.append("}");
             }
-            stringBuilder.append("return __last__;})();");
+            stringBuilder.append("return __last__;})()");
         }
         return null;
     }
@@ -155,7 +163,7 @@ public class JavaScriptGenerator implements AstNode.ExpressionVisitor<Object> {
                     stringBuilder.append("}");
                 }
             }
-            stringBuilder.append("return __last__;})();");
+            stringBuilder.append("return __last__;})()");
         }
         return null;
     }
@@ -194,24 +202,19 @@ public class JavaScriptGenerator implements AstNode.ExpressionVisitor<Object> {
 
     @Override
     public Object visitFunctionCall(AstNode.FunctionCall node) {
-        //if(!functions.contains(node.name())) {
-        //    throw new NubRuntimeException("function " + node.name().name() + " is not defined");
-        //}
-        {
-            stringBuilder.append("(");
-            node.name().accept(this);
-            stringBuilder.append(")(");
-            boolean isFirst = true;
-            for(AstNode.Expression e:node.params()) {
-                e.accept(this);
-                if(isFirst){
-                    isFirst = false;
-                    stringBuilder.append(",");
-                }
+        stringBuilder.append("(");
+        node.name().accept(this);
+        stringBuilder.append(")(");
+        boolean isFirst = true;
+        for(AstNode.Expression e:node.params()) {
+            e.accept(this);
+            if(isFirst){
+                isFirst = false;
+                stringBuilder.append(",");
             }
-            stringBuilder.append(")");
-            return null;
         }
+        stringBuilder.append(")");
+        return null;
     }
 
     @Override
