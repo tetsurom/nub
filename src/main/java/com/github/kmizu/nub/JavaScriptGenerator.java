@@ -113,6 +113,10 @@ public class JavaScriptGenerator implements AstNode.ExpressionVisitor<Object> {
                     stringBuilder.append(";");
                     stringBuilder.append("__last__ = ");
                     stringBuilder.append(((AstNode.LetExpression) e).variableName());
+                } else if (e instanceof AstNode.Return) {
+                    e.accept(this);
+                    stringBuilder.append(";");
+                    break;
                 } else {
                     stringBuilder.append("__last__ = ");
                     e.accept(this);
@@ -122,11 +126,44 @@ public class JavaScriptGenerator implements AstNode.ExpressionVisitor<Object> {
         }
     }
 
+    private void visitExpressionsDirectReturn(List<AstNode.Expression> nodes)
+    {
+
+        for (int i = 0, n = nodes.size(); i < n; ++i) {
+            AstNode.Expression e = nodes.get(i);
+            if(i < n - 1)
+            {
+                e.accept(this);
+            }
+            else {
+                if (e instanceof AstNode.DefFunction) {
+                    e.accept(this);
+                    stringBuilder.append(";");
+                    stringBuilder.append("return ");
+                    stringBuilder.append(((AstNode.DefFunction) e).name());
+                } else if (e instanceof AstNode.LetExpression) {
+                    e.accept(this);
+                    stringBuilder.append(";");
+                    stringBuilder.append("return ");
+                    stringBuilder.append(((AstNode.LetExpression) e).variableName());
+                } else if (e instanceof AstNode.Return) {
+                    e.accept(this);
+                    stringBuilder.append(";");
+                    break;
+                } else {
+                    stringBuilder.append("return ");
+                    e.accept(this);
+                }
+            }
+            stringBuilder.append(";");
+        }
+    }
+
     @Override
     public Object visitExpressionList(AstNode.ExpressionList node) {
-        stringBuilder.append("(function(){ let __last__ = 0;"); {
-            visitExpressions(node.expressions());
-            stringBuilder.append("return __last__;})();");
+        stringBuilder.append("(function(){"); {
+            visitExpressionsDirectReturn(node.expressions());
+            stringBuilder.append("})();");
         }
         return null;
     }
@@ -149,21 +186,21 @@ public class JavaScriptGenerator implements AstNode.ExpressionVisitor<Object> {
 
     @Override
     public Object visitIfExpression(AstNode.IfExpression node) {
-        stringBuilder.append("(function(){ let __last__ = 0;"); {
+        stringBuilder.append("(function(){"); {
             stringBuilder.append("if( ");
             node.condition().accept(this);
             stringBuilder.append(" ){");
             {
-                visitExpressions(node.thenClause());
+                visitExpressionsDirectReturn(node.thenClause());
                 stringBuilder.append("}");
             }
             if(node.elseClause().size() > 0) {
                 stringBuilder.append("else{"); {
-                    visitExpressions(node.elseClause());
+                    visitExpressionsDirectReturn(node.elseClause());
                     stringBuilder.append("}");
                 }
             }
-            stringBuilder.append("return __last__;})()");
+            stringBuilder.append("return 0;})()");
         }
         return null;
     }
@@ -181,9 +218,9 @@ public class JavaScriptGenerator implements AstNode.ExpressionVisitor<Object> {
                 stringBuilder.append(",");
             }
         }
-        stringBuilder.append("){ let __last__ = 0;"); {
-            visitExpressions(node.body());
-            stringBuilder.append("return __last__;}");
+        stringBuilder.append("){"); {
+            visitExpressionsDirectReturn(node.body());
+            stringBuilder.append("}");
         }
         return null;
     }
@@ -221,7 +258,6 @@ public class JavaScriptGenerator implements AstNode.ExpressionVisitor<Object> {
     public Object visitReturn(AstNode.Return node) {
         stringBuilder.append("return ");
         node.expression().accept(this);
-        stringBuilder.append(";");
         return null;
     }
 }
